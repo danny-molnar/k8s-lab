@@ -1,0 +1,33 @@
+# ---- Terraform ----
+terraform/.terraform/
+terraform/.terraform.lock.hcl
+terraform/terraform.tfstate
+terraform/terraform.tfstate.*
+terraform/crash.log
+
+# ---- Kubernetes ----
+# kubectl cache files
+.kube/
+
+# ---- Helm ----
+# Helm chart build artifacts
+helm/**/charts/
+helm/**/Chart.lock
+helm/**/values.override.yaml
+
+# ---- Kind ----
+# Sometimes kind stores logs locally
+kind-logs/
+
+# ---- Editor / OS ----
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ---- Python / Scripts (if any) ----
+__pycache__/
+
+# ---- Logs ----
+*.log
