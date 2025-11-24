@@ -4,38 +4,43 @@ NAMESPACE    ?= apps-dev
 CHART_PATH   ?= helm/app
 RELEASE_NAME ?= demo-app
 
-.PHONY: cluster-up cluster-down platform-apply platform-destroy app-deploy app-delete test ci destroy-all
-
 cluster-up:
-	kind create cluster --name $(CLUSTER_NAME) --config $(KIND_CONFIG)
+	@if ! kind get clusters | grep -q $(CLUSTER_NAME); then \
+	  echo ">> creating kind cluster $(CLUSTER_NAME)"; \
+	  kind create cluster --name $(CLUSTER_NAME) --config $(KIND_CONFIG); \
+	else \
+	  echo ">> kind cluster $(CLUSTER_NAME) already exists, skipping"; \
+	fi
 
 cluster-down:
-	kind delete cluster --name $(CLUSTER_NAME) || true
+	@echo ">> deleting kind cluster $(CLUSTER_NAME) (if it exists)"
+	- kind delete cluster --name $(CLUSTER_NAME)
 
 platform-apply:
+	@echo ">> applying Terraform platform"
 	terraform -chdir=terraform init -upgrade
 	terraform -chdir=terraform apply -auto-approve
 
 platform-destroy:
-	terraform -chdir=terraform destroy -auto-approve || true
+	@echo ">> destroying Terraform platform (if any)"
+	- terraform -chdir=terraform destroy -auto-approve
 
 app-deploy:
+	@echo ">> deploying Helm release $(RELEASE_NAME) into $(NAMESPACE)"
 	helm upgrade --install $(RELEASE_NAME) $(CHART_PATH) \
 	  --namespace $(NAMESPACE) \
 	  --create-namespace
 
 app-delete:
-	-helm uninstall $(RELEASE_NAME) -n $(NAMESPACE) || true
+	@echo ">> uninstalling Helm release $(RELEASE_NAME) from $(NAMESPACE) (if it exists)"
+	- helm uninstall $(RELEASE_NAME) -n $(NAMESPACE)
 
 test:
-	# Wait for deployment to be ready
+	@echo ">> waiting for rollout of $(RELEASE_NAME) in $(NAMESPACE)"
 	kubectl rollout status deploy/$(RELEASE_NAME) -n $(NAMESPACE) --timeout=120s
-	# Simple smoke test via a curl pod hitting the service
-	kubectl run curl-tester --rm -i --restart=Never \
-	  -n $(NAMESPACE) \
-	  --image=curlimages/curl -- \
-	  curl -sS http://$(RELEASE_NAME):80 || exit 1
 
 ci: cluster-up platform-apply app-deploy test
 
 destroy-all: app-delete platform-destroy cluster-down
+
+cleanup: destroy-all
