@@ -26,3 +26,10 @@ hpa:
   minReplicas: 2
   maxReplicas: 5
   targetCPUUtilizationPercentage: 50
+
+app:
+  env: "dev"
+  message: "Hello from demo-app on kind!"
+
+secrets:
+  apiKey: "super-secret-demo-key"

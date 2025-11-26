@@ -1,11 +1,10 @@
----
 name: kind-e2e
 
 on:
-  workflow_dispatch:
   push:
     branches: [ main ]
   pull_request:
+  workflow_dispatch:
 
 jobs:
   e2e:
@@ -14,9 +13,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Set up Docker (needed for kind)
-        run: docker version
 
       - name: Install kind
         run: |
@@ -37,17 +33,17 @@ jobs:
 
       - name: Install Terraform
         run: |
-          TF_VER="1.9.8"
+          TF_VER="1.5.7"
           curl -LO https://releases.hashicorp.com/terraform/${TF_VER}/terraform_${TF_VER}_linux_amd64.zip
           sudo apt-get update && sudo apt-get install -y unzip
           unzip terraform_${TF_VER}_linux_amd64.zip
           sudo mv terraform /usr/local/bin/terraform
 
-      - name: Run CI pipeline (kind + terraform + helm + test)
+      - name: Run platform + app e2e (make ci)
         run: |
           make ci
 
-      - name: Tear down (even if tests failed)
+      - name: Cleanup (always)
         if: always()
         run: |
-          make destroy-all
+          make cleanup
