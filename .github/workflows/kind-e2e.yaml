@@ -46,6 +46,18 @@ jobs:
         run: |
           make ci
 
+      - name: Debug on failure (pods + events)
+        if: failure()
+        run: |
+          echo ">> Namespaces"
+          kubectl get ns
+          echo ">> Pods in apps-dev"
+          kubectl get pods -n apps-dev -o wide
+          echo ">> Deployment describe"
+          kubectl describe deploy demo-app -n apps-dev || true
+          echo ">> Recent events"
+          kubectl get events -A | tail -n 50
+
       - name: Cleanup (always)
         if: always()
         run: |

@@ -37,12 +37,19 @@ app-delete:
 
 test:
 	@echo ">> waiting for rollout of $(RELEASE_NAME) in $(NAMESPACE)"
-	kubectl rollout status deploy/$(RELEASE_NAME) -n $(NAMESPACE) --timeout=120s
-	@echo ">> smoke test: curl demo-app service"
-	kubectl run curl-smoke --rm -i --restart=Never \
+	kubectl rollout status deploy/$(RELEASE_NAME) -n $(NAMESPACE) --timeout=180s
+
+	@echo ">> smoke test: /readyz"
+	kubectl run curl-readyz --rm -i --restart=Never \
 	  -n $(NAMESPACE) \
 	  --image=curlimages/curl -- \
-	  curl -sS http://$(RELEASE_NAME):80
+	  sh -c "curl -sf http://$(RELEASE_NAME):80/readyz"
+
+	@echo ">> smoke test: /"
+	kubectl run curl-root --rm -i --restart=Never \
+	  -n $(NAMESPACE) \
+	  --image=curlimages/curl -- \
+	  sh -c "curl -sf http://$(RELEASE_NAME):80/"
 
 ci: cluster-up platform-apply app-deploy test
 
